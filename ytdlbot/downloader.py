@@ -86,8 +86,7 @@ def remove_bash_color(text):
 def download_hook(d: dict, bot_msg):
     # since we're using celery, server location may be located in different continent.
     # Therefore, we can't trigger the hook very often.
-    # the key is user_id + download_link
-    original_url = d["info_dict"]
+    # the key is user_id
     key = f"{bot_msg.chat.id}"
 
     if d['status'] == 'downloading':
