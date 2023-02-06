@@ -108,7 +108,7 @@ def forward_video(url, client, bot_msg):
         return False
 
     try:
-        res_msg: "Message" = upload_processor(client, bot_msg, url, cached_fid)
+        res_msg: "Message" = upload_processor(client, bot_msg, cached_fid)
         if not res_msg:
             raise ValueError("Failed to forward message")
         obj = res_msg.document or res_msg.video or res_msg.audio
@@ -118,7 +118,7 @@ def forward_video(url, client, bot_msg):
                         or getattr(obj, "file_size", 10)
             # TODO: forward file size may exceed the limit
             vip.use_quota(chat_id, file_size)
-        caption, _ = gen_cap(bot_msg, url, obj)
+        caption, _ = gen_cap(bot_msg, obj)
         res_msg.edit_text(caption, reply_markup=gen_video_markup())
         bot_msg.edit_text(f"Download success!✅✅✅")
         red.update_metrics("cache_hit")
