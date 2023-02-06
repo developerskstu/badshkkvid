@@ -69,7 +69,6 @@ def tqdm_progress(desc, total, finished, speed="", eta=""):
     detail = tqdm_output[2].replace("[A", "")
     text = f"""
 {desc}
-
 {progress}
 {detail}
 {more("Speed:", speed)}
@@ -86,8 +85,9 @@ def remove_bash_color(text):
 def download_hook(d: dict, bot_msg):
     # since we're using celery, server location may be located in different continent.
     # Therefore, we can't trigger the hook very often.
-    # the key is user_id
-    key = f"{bot_msg.chat.id}"
+    # the key is user_id + download_link
+    original_url = d["info_dict"]["original_url"]
+    key = f"{bot_msg.chat.id}-{original_url}"
 
     if d['status'] == 'downloading':
         downloaded = d.get("downloaded_bytes", 0)
