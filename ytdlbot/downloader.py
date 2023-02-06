@@ -87,8 +87,8 @@ def download_hook(d: dict, bot_msg):
     # since we're using celery, server location may be located in different continent.
     # Therefore, we can't trigger the hook very often.
     # the key is user_id + download_link
-    original_url = d["info_dict"]["original_url"]
-    key = f"{bot_msg.chat.id}-{original_url}"
+    original_url = d["info_dict"]
+    key = f"{bot_msg.chat.id}"
 
     if d['status'] == 'downloading':
         downloaded = d.get("downloaded_bytes", 0)
