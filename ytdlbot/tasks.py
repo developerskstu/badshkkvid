@@ -79,7 +79,7 @@ def audio_task(chat_id, message_id):
     logging.info("Audio celery tasks ended.")
 
 
-def get_unique_clink(original_url, user_id):
+def get_unique_clink(user_id):
     settings = get_user_settings(str(user_id))
     clink = VIP().extract_canonical_link(original_url)
     try:
@@ -90,10 +90,10 @@ def get_unique_clink(original_url, user_id):
 
 
 @app.task()
-def direct_download_task(chat_id, message_id, url):
-    logging.info("Direct download celery tasks started for %s", url)
+def direct_download_task(chat_id, message_id):
+    logging.info("Direct download celery tasks started for %s")
     bot_msg = get_messages(chat_id, message_id)
-    direct_normal_download(bot_msg, celery_client, url)
+    direct_normal_download(bot_msg, celery_client)
     logging.info("Direct download celery tasks ended.")
 
 
@@ -137,13 +137,13 @@ def ytdl_download_entrance(bot_msg, client):
         return
     mode = get_user_settings(str(chat_id))[-1]
     if ENABLE_CELERY and mode in [None, "Celery"]:
-        async_task(ytdl_download_task, chat_id, bot_msg.message_id, url)
+        async_task(ytdl_download_task, chat_id, bot_msg.message_id,)
         # ytdl_download_task.delay(chat_id, bot_msg.message_id)
     else:
         ytdl_normal_download(bot_msg, client, url)
 
 
-def direct_download_entrance(bot_msg, client, url):
+def direct_download_entrance(bot_msg, client):
     if ENABLE_CELERY:
         # TODO disable it for now
         direct_normal_download(bot_msg, client, url)
