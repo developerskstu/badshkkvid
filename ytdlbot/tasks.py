@@ -108,7 +108,7 @@ def forward_video(url, client, bot_msg):
         return False
 
     try:
-        res_msg: "Message" = upload_processor(client, bot_msg, url, cached_fid)
+        res_msg: "Message" = upload_processor(client, bot_msg, cached_fid)
         if not res_msg:
             raise ValueError("Failed to forward message")
         obj = res_msg.document or res_msg.video or res_msg.audio
@@ -118,7 +118,7 @@ def forward_video(url, client, bot_msg):
                         or getattr(obj, "file_size", 10)
             # TODO: forward file size may exceed the limit
             vip.use_quota(chat_id, file_size)
-        caption, _ = gen_cap(bot_msg, url, obj)
+        caption, _ = gen_cap(bot_msg, obj)
         res_msg.edit_text(caption, reply_markup=gen_video_markup())
         bot_msg.edit_text(f"Download success!✅✅✅")
         red.update_metrics("cache_hit")
@@ -131,14 +131,14 @@ def forward_video(url, client, bot_msg):
         red.update_metrics("cache_miss")
 
 
-def ytdl_download_entrance(bot_msg, client, url):
+def ytdl_download_entrance(bot_msg, client):
     chat_id = bot_msg.chat.id
-    if forward_video(url, client, bot_msg):
+    if forward_video( client, bot_msg):
         return
     mode = get_user_settings(str(chat_id))[-1]
     if ENABLE_CELERY and mode in [None, "Celery"]:
         async_task(ytdl_download_task, chat_id, bot_msg.message_id, url)
-        # ytdl_download_task.delay(chat_id, bot_msg.message_id, url)
+        # ytdl_download_task.delay(chat_id, bot_msg.message_id)
     else:
         ytdl_normal_download(bot_msg, client, url)
 
