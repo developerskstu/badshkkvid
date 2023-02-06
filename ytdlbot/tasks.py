@@ -27,17 +27,17 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from celery import Celery
 from celery.worker.control import Panel
-from pyrogram import idle
+from pyrogram import Client, idle
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
 from client_init import create_app
-from config import (ARCHIVE_ID, BROKER, ENABLE_CELERY, ENABLE_QUEUE,
-                    ENABLE_VIP, TG_MAX_SIZE, WORKERS)
+from config import (ARCHIVE_ID, AUDIO_FORMAT, BROKER, ENABLE_CELERY,
+                    ENABLE_QUEUE, ENABLE_VIP, TG_MAX_SIZE, WORKERS)
 from constant import BotText
 from db import Redis
-from downloader import (edit_text, sizeof_fmt, tqdm_progress, upload_hook,
-                        ytdl_download)
+from downloader import (edit_text, run_ffmpeg, sizeof_fmt, tqdm_progress,
+                        upload_hook, ytdl_download)
 from limit import VIP
 from utils import (apply_log_formatter, auto_restart, customize_logger,
                    get_metadata, get_revision, get_user_settings)
@@ -51,7 +51,7 @@ logging.getLogger('apscheduler.executors.default').propagate = False
 # app = Celery('celery', broker=BROKER, accept_content=['pickle'], task_serializer='pickle')
 app = Celery('tasks', broker=BROKER)
 
-celery_client = create_app("session/celery")
+celery_client = create_app(":memory:")
 
 
 def get_messages(chat_id, message_id):
@@ -79,7 +79,7 @@ def audio_task(chat_id, message_id):
     logging.info("Audio celery tasks ended.")
 
 
-def get_unique_clink(user_id):
+def get_unique_clink(original_url, user_id):
     settings = get_user_settings(str(user_id))
     clink = VIP().extract_canonical_link(original_url)
     try:
@@ -90,10 +90,10 @@ def get_unique_clink(user_id):
 
 
 @app.task()
-def direct_download_task(chat_id, message_id):
-    logging.info("Direct download celery tasks started for %s")
+def direct_download_task(chat_id, message_id, url):
+    logging.info("Direct download celery tasks started for %s", url)
     bot_msg = get_messages(chat_id, message_id)
-    direct_normal_download(bot_msg, celery_client)
+    direct_normal_download(bot_msg, celery_client, url)
     logging.info("Direct download celery tasks ended.")
 
 
@@ -108,7 +108,7 @@ def forward_video(url, client, bot_msg):
         return False
 
     try:
-        res_msg: "Message" = upload_processor(client, bot_msg, cached_fid)
+        res_msg: "Message" = upload_processor(client, bot_msg, url, cached_fid)
         if not res_msg:
             raise ValueError("Failed to forward message")
         obj = res_msg.document or res_msg.video or res_msg.audio
@@ -118,7 +118,7 @@ def forward_video(url, client, bot_msg):
                         or getattr(obj, "file_size", 10)
             # TODO: forward file size may exceed the limit
             vip.use_quota(chat_id, file_size)
-        caption, _ = gen_cap(bot_msg, obj)
+        caption, _ = gen_cap(bot_msg, url, obj)
         res_msg.edit_text(caption, reply_markup=gen_video_markup())
         bot_msg.edit_text(f"Download success!✅✅✅")
         red.update_metrics("cache_hit")
@@ -131,19 +131,19 @@ def forward_video(url, client, bot_msg):
         red.update_metrics("cache_miss")
 
 
-def ytdl_download_entrance(bot_msg, client):
+def ytdl_download_entrance(bot_msg, client, url):
     chat_id = bot_msg.chat.id
-    if forward_video( client, bot_msg):
+    if forward_video(url, client, bot_msg):
         return
     mode = get_user_settings(str(chat_id))[-1]
     if ENABLE_CELERY and mode in [None, "Celery"]:
-        async_task(ytdl_download_task, chat_id, bot_msg.message_id,)
-        # ytdl_download_task.delay(chat_id, bot_msg.message_id)
+        async_task(ytdl_download_task, chat_id, bot_msg.message_id, url)
+        # ytdl_download_task.delay(chat_id, bot_msg.message_id, url)
     else:
         ytdl_normal_download(bot_msg, client, url)
 
 
-def direct_download_entrance(bot_msg, client):
+def direct_download_entrance(bot_msg, client, url):
     if ENABLE_CELERY:
         # TODO disable it for now
         direct_normal_download(bot_msg, client, url)
@@ -357,7 +357,7 @@ def gen_cap(bm, url, video_path):
         )
     remain = bot_text.remaining_quota_caption(chat_id)
     worker = get_dl_source()
-    cap = f"{user_info}\n{file_name}\n\n{url}\n\nInfo: {meta['width']}x{meta['height']} {file_size}\t" \
+    cap = f"{user_info}\n`{file_name}`\n\n{url}\n\nInfo: {meta['width']}x{meta['height']} {file_size}\t" \
           f"{meta['duration']}s\n{remain}\n{worker}\n{bot_text.custom_text}"
     return cap, meta
 
@@ -432,11 +432,6 @@ def run_celery():
     if ENABLE_QUEUE:
         argv.extend(["-Q", worker_name])
     app.worker_main(argv)
-
-
-def purge_tasks():
-    count = app.control.purge()
-    return f"purged {count} tasks."
 
 
 if __name__ == '__main__':
