@@ -137,19 +137,19 @@ def ytdl_download_entrance(bot_msg, client, url):
         return
     mode = get_user_settings(str(chat_id))[-1]
     if ENABLE_CELERY and mode in [None, "Celery"]:
-        async_task(ytdl_download_task, chat_id, bot_msg.message_id, url)
-        # ytdl_download_task.delay(chat_id, bot_msg.message_id, url)
+        async_task(ytdl_download_task, chat_id, bot_msg.message_id,)
+        # ytdl_download_task.delay(chat_id, bot_msg.message_id,)
     else:
-        ytdl_normal_download(bot_msg, client, url)
+        ytdl_normal_download(bot_msg, client,)
 
 
-def direct_download_entrance(bot_msg, client, url):
+def direct_download_entrance(bot_msg, client,):
     if ENABLE_CELERY:
         # TODO disable it for now
         direct_normal_download(bot_msg, client, url)
-        # direct_download_task.delay(bot_msg.chat.id, bot_msg.message_id, url)
+        # direct_download_task.delay(bot_msg.chat.id, bot_msg.message_id,)
     else:
-        direct_normal_download(bot_msg, client, url)
+        direct_normal_download(bot_msg, client,)
 
 
 def audio_entrance(bot_msg, client):
@@ -160,7 +160,7 @@ def audio_entrance(bot_msg, client):
         normal_audio(bot_msg, client)
 
 
-def direct_normal_download(bot_msg, client, url):
+def direct_normal_download(bot_msg, client,):
     chat_id = bot_msg.chat.id
     headers = {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36"}
