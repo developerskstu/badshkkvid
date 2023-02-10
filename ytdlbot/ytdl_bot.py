@@ -359,7 +359,7 @@ def download_handler(client: "Client", message: "types.Message"):
 
     client.send_chat_action(chat_id, 'upload_video')
     bot_msg.chat = message.chat
-    ytdl_download_entrance(bot_msg, client, url)
+    ytdl_download_entrance(bot_msg, client,)
 
 
 @app.on_callback_query(filters.regex(r"document|video|audio"))
