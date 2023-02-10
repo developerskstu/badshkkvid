@@ -118,7 +118,7 @@ def forward_video(url, client, bot_msg):
                         or getattr(obj, "file_size", 10)
             # TODO: forward file size may exceed the limit
             vip.use_quota(chat_id, file_size)
-        caption, _ = gen_cap(bot_msg, url, obj)
+        caption, _ = gen_cap(bot_msg, obj)
         res_msg.edit_text(caption, reply_markup=gen_video_markup())
         bot_msg.edit_text(f"Download success!✅✅✅")
         red.update_metrics("cache_hit")
@@ -281,7 +281,7 @@ def upload_processor(client, bot_msg, url, vp_or_fid: "typing.Any[str, pathlib.P
     chat_id = bot_msg.chat.id
     red = Redis()
     markup = gen_video_markup()
-    cap, meta = gen_cap(bot_msg, url, vp_or_fid)
+    cap, meta = gen_cap(bot_msg, , vp_or_fid)
     settings = get_user_settings(str(chat_id))
     if ARCHIVE_ID and isinstance(vp_or_fid, pathlib.Path):
         chat_id = ARCHIVE_ID
