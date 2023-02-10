@@ -267,7 +267,7 @@ def ytdl_normal_download(bot_msg, client, url):
                 # client.send_chat_action(chat_id, 'upload_document')
                 # client.send_message(chat_id, upload_transfer_sh(bot_msg, video_paths))
                 continue
-            upload_processor(client, bot_msg, url, video_path)
+            upload_processor(client, bot_msg,  video_path)
         bot_msg.edit_text('Download success!✅')
     else:
         client.send_chat_action(chat_id, 'typing')
@@ -277,11 +277,11 @@ def ytdl_normal_download(bot_msg, client, url):
     temp_dir.cleanup()
 
 
-def upload_processor(client, bot_msg, url, vp_or_fid: "typing.Any[str, pathlib.Path]"):
+def upload_processor(client, bot_msg, vp_or_fid: "typing.Any[str, pathlib.Path]"):
     chat_id = bot_msg.chat.id
     red = Redis()
     markup = gen_video_markup()
-    cap, meta = gen_cap(bot_msg, , vp_or_fid)
+    cap, meta = gen_cap(bot_msg, vp_or_fid)
     settings = get_user_settings(str(chat_id))
     if ARCHIVE_ID and isinstance(vp_or_fid, pathlib.Path):
         chat_id = ARCHIVE_ID
