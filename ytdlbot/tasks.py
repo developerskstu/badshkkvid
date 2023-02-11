@@ -64,10 +64,10 @@ def get_messages(chat_id, message_id):
 
 
 @app.task()
-def ytdl_download_task(chat_id, message_id, url):
+def ytdl_download_task(chat_id, message_id):
     logging.info("YouTube celery tasks started for %s", url)
     bot_msg = get_messages(chat_id, message_id)
-    ytdl_normal_download(bot_msg, celery_client, url)
+    ytdl_normal_download(bot_msg, celery_client)
     logging.info("YouTube celery tasks ended.")
 
 
@@ -97,7 +97,7 @@ def direct_download_task(chat_id, message_id):
     logging.info("Direct download celery tasks ended.")
 
 
-def forward_video(url, client, bot_msg):
+def forward_video(client, bot_msg):
     chat_id = bot_msg.chat.id
     red = Redis()
     vip = VIP()
@@ -133,7 +133,7 @@ def forward_video(url, client, bot_msg):
 
 def ytdl_download_entrance(bot_msg, client):
     chat_id = bot_msg.chat.id
-    if forward_video(url, client, bot_msg):
+    if forward_video(client, bot_msg):
         return
     mode = get_user_settings(str(chat_id))[-1]
     if ENABLE_CELERY and mode in [None, "Celery"]:
@@ -179,7 +179,7 @@ def direct_normal_download(bot_msg, client,):
 
     req = None
     try:
-        req = requests.get(url, headers=headers, stream=True)
+        req = requests.get(headers=headers, stream=True)
         length = int(req.headers.get("content-length"))
         filename = re.findall("filename=(.+)", req.headers.get("content-disposition"))[0]
     except TypeError:
