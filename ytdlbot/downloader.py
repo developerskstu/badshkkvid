@@ -182,7 +182,7 @@ def can_convert_mp4(video_path, uid):
         return True
 
 
-def ytdl_download(url, tempdir, bm, **kwargs) -> dict:
+def ytdl_download(, tempdir, bm, **kwargs) -> dict:
     chat_id = bm.chat.id
     hijack = kwargs.get("hijack")
     response = {"status": True, "error": "", "filepath": []}
@@ -199,7 +199,7 @@ def ytdl_download(url, tempdir, bm, **kwargs) -> dict:
         "bestvideo[vcodec^=avc]+bestaudio[acodec^=mp4a]/best[vcodec^=avc]/best",
         None
     ]
-    adjust_formats(chat_id, url, formats, hijack)
+    adjust_formats(chat_id, formats, hijack)
     add_instagram_cookies(url, ydl_opts)
     # check quota before download
     if ENABLE_VIP:
@@ -223,7 +223,7 @@ def ytdl_download(url, tempdir, bm, **kwargs) -> dict:
                 response["error"] = ""
                 break
             except Exception as e:
-                logging.error("Download failed for %s ", url)
+                logging.error("Download failed for %s ")
                 response["status"] = False
                 response["error"] = str(e)
 
