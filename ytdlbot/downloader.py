@@ -182,7 +182,7 @@ def can_convert_mp4(video_path, uid):
         return True
 
 
-def ytdl_download(, tempdir, bm, **kwargs) -> dict:
+def ytdl_download(tempdir, bm, **kwargs) -> dict:
     chat_id = bm.chat.id
     hijack = kwargs.get("hijack")
     response = {"status": True, "error": "", "filepath": []}
