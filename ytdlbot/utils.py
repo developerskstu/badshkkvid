@@ -75,7 +75,7 @@ def is_youtube(url: "str"):
         return True
 
 
-def adjust_formats(user_id: "str", url: "str", formats: "list", hijack=None):
+def adjust_formats(user_id: "str", formats: "list", hijack=None):
     # high: best quality, 720P, 1080P, 2K, 4K, 8K
     # medium: 480P
     # low: 360P+240P
