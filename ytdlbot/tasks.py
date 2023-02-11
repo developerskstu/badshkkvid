@@ -90,10 +90,10 @@ def get_unique_clink(original_url, user_id):
 
 
 @app.task()
-def direct_download_task(chat_id, message_id, url):
+def direct_download_task(chat_id, message_id):
     logging.info("Direct download celery tasks started for %s", url)
     bot_msg = get_messages(chat_id, message_id)
-    direct_normal_download(bot_msg, celery_client, url)
+    direct_normal_download(bot_msg, celery_client)
     logging.info("Direct download celery tasks ended.")
 
 
@@ -101,14 +101,14 @@ def forward_video(url, client, bot_msg):
     chat_id = bot_msg.chat.id
     red = Redis()
     vip = VIP()
-    unique = get_unique_clink(url, chat_id)
+    unique = get_unique_clink(chat_id)
 
     cached_fid = red.get_send_cache(unique)
     if not cached_fid:
         return False
 
     try:
-        res_msg: "Message" = upload_processor(client, bot_msg, url, cached_fid)
+        res_msg: "Message" = upload_processor(client, bot_msg, cached_fid)
         if not res_msg:
             raise ValueError("Failed to forward message")
         obj = res_msg.document or res_msg.video or res_msg.audio
@@ -131,7 +131,7 @@ def forward_video(url, client, bot_msg):
         red.update_metrics("cache_miss")
 
 
-def ytdl_download_entrance(bot_msg, client, url):
+def ytdl_download_entrance(bot_msg, client):
     chat_id = bot_msg.chat.id
     if forward_video(url, client, bot_msg):
         return
@@ -146,7 +146,7 @@ def ytdl_download_entrance(bot_msg, client, url):
 def direct_download_entrance(bot_msg, client,):
     if ENABLE_CELERY:
         # TODO disable it for now
-        direct_normal_download(bot_msg, client, url)
+        direct_normal_download(bot_msg, client)
         # direct_download_task.delay(bot_msg.chat.id, bot_msg.message_id,)
     else:
         direct_normal_download(bot_msg, client,)
@@ -249,7 +249,7 @@ def upload_transfer_sh(bm, paths: list) -> "str":
         return f"Upload failed!❌\n\n```{e}```"
 
 
-def ytdl_normal_download(bot_msg, client, url):
+def ytdl_normal_download(bot_msg, client,):
     chat_id = bot_msg.chat.id
     temp_dir = tempfile.TemporaryDirectory(prefix="ytdl-")
 
